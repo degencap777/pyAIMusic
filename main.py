@@ -246,7 +246,7 @@ if __name__ == '__main__':
 
     # # read_midi('F:\\Winter2021\\PythonMusicAI\\dataset\\schu_143_1.mid')
     path = 'F:\\Winter2021\\PythonMusicGenerator\\dataset\\'
-    num_timesteps = 64
+    num_timesteps = 32 #you need to change input length if you change this too
     # # path = 'dataset/'
 
     ingest = True #do you want to ingest?

@@ -169,3 +169,5 @@ x_seq.npy
 x_unique.npy
 y_seq.npy
 y_unique.npy
+
+dataset/
