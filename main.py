@@ -1,6 +1,6 @@
 import music21 as m21
 import numpy as np
-import cupy as cp
+# import cupy as cp #TODO: install cupy?
 import os
 from collections import Counter
 import matplotlib.pyplot as plot
@@ -231,8 +231,9 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
 
     # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
-    history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=5,
+    model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=5,
                         validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+    # model = kmodels.load_model('best_model.h5')
 
 
 def convert_to_midi(prediction_output):
@@ -294,7 +295,7 @@ if __name__ == '__main__':
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = True  # do you want to ingest?
+    ingest = False  # do you want to ingest?
     re_fit = True  # do you want to re-fit the model?
     output = 'predicted_sch_15'  # what would you like your output name to be?
 
@@ -443,7 +444,7 @@ if __name__ == '__main__':
     #                         validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
 
     if re_fit:
-        fit_model(train_test_split(x_seq, y_seq, test_size=0.2, random_state=0))
+        fit_model(x_tr, x_val, y_tr, y_val)
     model = kmodels.load_model('best_model.h5')
 
 # now we compose our own music......
