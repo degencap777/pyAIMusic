@@ -1,5 +1,6 @@
 import music21 as m21
 import numpy as np
+import cupy as cp
 import os
 from collections import Counter
 import matplotlib.pyplot as plot
@@ -229,8 +230,8 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     # TODO: remember to change the names
     mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
 
-    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
-    history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=2,
+    # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
+    history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=5,
                         validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
 
 
@@ -293,9 +294,9 @@ if __name__ == '__main__':
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = False  # do you want to ingest?
-    re_fit = False;  # do you want to re-fit the model?
-    output = 'predicted'  # what would you like your output name to be?
+    ingest = True  # do you want to ingest?
+    re_fit = True  # do you want to re-fit the model?
+    output = 'predicted_sch_15'  # what would you like your output name to be?
 
     # ingest, path, re_fit, weights_name, output_name = check_inputs()
     # ingest = true if want ingest, false if no need to ingest
@@ -451,7 +452,7 @@ ind = np.random.randint(0, len(x_val) - 1)
 random_music = x_val[ind]
 
 predictions = []
-for i in range(10):
+for i in range(50):
     random_music = random_music.reshape(1, num_timesteps)
 
     prob = model.predict(random_music)[0]
