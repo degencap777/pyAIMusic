@@ -191,6 +191,49 @@ def ingest_to_csv(path, num_timesteps, graph):
     np.save("y_unique", unique_y)
 
 
+def fit_model(x_tr, x_val, y_tr, y_val):
+    # xx% for training and 100-xx% for evaluation.
+    '''currently using 20% for evaluation'''
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
+    x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
+
+    # start building the model now. Clean this up later.
+    kbackend.clear_session()
+    model = kmodels.Sequential();
+
+    # embedding layers
+    model.add(klayers.Embedding(len(unique_x), 100, input_length=32, trainable=True))
+
+    model.add(klayers.Conv1D(64, 3, padding='causal', activation='relu'))
+    model.add(klayers.Dropout(0.2))
+    model.add(klayers.MaxPool1D(2))
+
+    model.add(klayers.Conv1D(128, 3, activation='relu', dilation_rate=2, padding='causal'))
+    model.add(klayers.Dropout(0.2))
+    model.add(klayers.MaxPool1D(2))
+
+    model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
+    model.add(klayers.Dropout(0.2))
+    model.add(klayers.MaxPool1D(2))
+
+    model.add(klayers.GlobalMaxPool1D())
+
+    model.add(klayers.Dense(256, activation='relu'))
+    model.add(klayers.Dense(len(unique_y), activation='softmax'))
+
+    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+
+    model.summary()
+
+    # callback to save best model during training
+    # TODO: remember to change the names
+    mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
+
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
+    history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=2,
+                        validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+
+
 def convert_to_midi(prediction_output):
     """
     converst back to midi !
@@ -251,7 +294,7 @@ if __name__ == '__main__':
     # # path = 'dataset/'
 
     ingest = False  # do you want to ingest?
-    re_fit = True;  # do you want to re-fit the model?
+    re_fit = False;  # do you want to re-fit the model?
     output = 'predicted'  # what would you like your output name to be?
 
     # ingest, path, re_fit, weights_name, output_name = check_inputs()
@@ -263,7 +306,7 @@ if __name__ == '__main__':
 
     if ingest:
         ingest_to_csv(path, num_timesteps, False)
-    print("ingested")
+        print("ingested")
 
     # print("memes1")
     # files = [i for i in os.listdir(path) if i.endswith(".mid")]
@@ -358,44 +401,48 @@ if __name__ == '__main__':
 
     # xx% for training and 100-xx% for evaluation.
     '''currently using 20% for evaluation'''
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
     x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
 
-    # start building the model now. Clean this up later.
-    kbackend.clear_session()
-    model = kmodels.Sequential();
+    # # start building the model now. Clean this up later.
+    # kbackend.clear_session()
+    # model = kmodels.Sequential();
+    #
+    # # embedding layers
+    # model.add(klayers.Embedding(len(unique_x), 100, input_length=32, trainable=True))
+    #
+    # model.add(klayers.Conv1D(64, 3, padding='causal', activation='relu'))
+    # model.add(klayers.Dropout(0.2))
+    # model.add(klayers.MaxPool1D(2))
+    #
+    # model.add(klayers.Conv1D(128, 3, activation='relu', dilation_rate=2, padding='causal'))
+    # model.add(klayers.Dropout(0.2))
+    # model.add(klayers.MaxPool1D(2))
+    #
+    # model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
+    # model.add(klayers.Dropout(0.2))
+    # model.add(klayers.MaxPool1D(2))
+    #
+    # model.add(klayers.GlobalMaxPool1D())
+    #
+    # model.add(klayers.Dense(256, activation='relu'))
+    # model.add(klayers.Dense(len(unique_y), activation='softmax'))
+    #
+    # model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+    #
+    # model.summary()
+    #
+    # # callback to save best model during training
+    # # TODO: remember to change the names
+    # mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
+    #
+    # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' #this is not a proper fix.
+    # if re_fit:
+    #     history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=2,
+    #                         validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
 
-    # embedding layers
-    model.add(klayers.Embedding(len(unique_x), 100, input_length=32, trainable=True))
-
-    model.add(klayers.Conv1D(64, 3, padding='causal', activation='relu'))
-    model.add(klayers.Dropout(0.2))
-    model.add(klayers.MaxPool1D(2))
-
-    model.add(klayers.Conv1D(128, 3, activation='relu', dilation_rate=2, padding='causal'))
-    model.add(klayers.Dropout(0.2))
-    model.add(klayers.MaxPool1D(2))
-
-    model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
-    model.add(klayers.Dropout(0.2))
-    model.add(klayers.MaxPool1D(2))
-
-    model.add(klayers.GlobalMaxPool1D())
-
-    model.add(klayers.Dense(256, activation='relu'))
-    model.add(klayers.Dense(len(unique_y), activation='softmax'))
-
-    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
-
-    model.summary()
-
-    # callback to save best model during training
-    # TODO: remember to change the names
-    mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
-
-    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' #this is not a proper fix.
     if re_fit:
-        history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=10,
-                            validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+        fit_model(train_test_split(x_seq, y_seq, test_size=0.2, random_state=0))
     model = kmodels.load_model('best_model.h5')
 
 # now we compose our own music......
@@ -419,4 +466,4 @@ x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
 predicted_notes = [x_int_to_note[i] for i in predictions]
 
 convert_to_midi(predicted_notes)
-FluidSynth.midi_to_audio('predicted.midi', 'output.wav')  # hopefully this generates a wav file.
+# FluidSynth.midi_to_audio('predicted.mid', 'output.wav')  # hopefully this generates a wav file.
