@@ -10,6 +10,7 @@ import keras.callbacks as kcallbacks
 import keras.backend as kbackend
 import random
 from midi2audio import FluidSynth
+import tensorflow as tf
 
 
 def check_inputs():
@@ -246,10 +247,10 @@ if __name__ == '__main__':
 
     # # read_midi('F:\\Winter2021\\PythonMusicAI\\dataset\\schu_143_1.mid')
     path = 'F:\\Winter2021\\PythonMusicGenerator\\dataset\\'
-    num_timesteps = 32 #you need to change input length if you change this too
+    num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = True #do you want to ingest?
+    ingest = False  # do you want to ingest?
     re_fit = True;  # do you want to re-fit the model?
     output = 'predicted'  # what would you like your output name to be?
 
@@ -391,30 +392,31 @@ if __name__ == '__main__':
     # TODO: remember to change the names
     mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
 
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' #this is not a proper fix.
     if re_fit:
         history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=10,
                             validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
     model = kmodels.load_model('best_model.h5')
 
-    # now we compose our own music......
-    ind = np.random.randint(0, len(x_val) - 1)
+# now we compose our own music......
+ind = np.random.randint(0, len(x_val) - 1)
 
-    random_music = x_val[ind]
+random_music = x_val[ind]
 
-    predictions = []
-    for i in range(10):
-        random_music = random_music.reshape(1, num_timesteps)
+predictions = []
+for i in range(10):
+    random_music = random_music.reshape(1, num_timesteps)
 
-        prob = model.predict(random_music)[0]
-        y_pred = np.argmax(prob, axis=0)
-        predictions.append(y_pred)
+    prob = model.predict(random_music)[0]
+    y_pred = np.argmax(prob, axis=0)
+    predictions.append(y_pred)
 
-        random_music = np.insert(random_music[0], len(random_music[0]), y_pred)
-        random_music = random_music[1:]
-    print(predictions)
+    random_music = np.insert(random_music[0], len(random_music[0]), y_pred)
+    random_music = random_music[1:]
+print(predictions)
 
-    x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
-    predicted_notes = [x_int_to_note[i] for i in predictions]
+x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
+predicted_notes = [x_int_to_note[i] for i in predictions]
 
-    convert_to_midi(predicted_notes)
-    FluidSynth.midi_to_audio('predicted.midi', 'output.wav')  # hopefully this generates a wav file.
+convert_to_midi(predicted_notes)
+FluidSynth.midi_to_audio('predicted.midi', 'output.wav')  # hopefully this generates a wav file.
