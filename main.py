@@ -236,7 +236,7 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     # model = kmodels.load_model('best_model.h5')
 
 
-def convert_to_midi(prediction_output):
+def convert_to_midi(prediction_output, output_path):
     """
     converst back to midi !
     :param prediction_output:
@@ -273,7 +273,8 @@ def convert_to_midi(prediction_output):
         # increase offset each iteration so that notes do not stack
         offset += 1
     midi_stream = m21.stream.Stream(output_notes)
-    midi_stream.write('midi', fp='predicted.mid')
+    output_path = output_path+'.mid'
+    midi_stream.write('midi', fp=output_path)
 
 
 def cov_midi_to_wav(name):
@@ -296,8 +297,9 @@ if __name__ == '__main__':
     # # path = 'dataset/'
 
     ingest = False  # do you want to ingest?
-    re_fit = True  # do you want to re-fit the model?
+    re_fit = False  # do you want to re-fit the model?
     output = 'predicted_sch_15'  # what would you like your output name to be?
+    prediction_len = 50 #how many steps of prediction do you want
 
     # ingest, path, re_fit, weights_name, output_name = check_inputs()
     # ingest = true if want ingest, false if no need to ingest
@@ -453,8 +455,8 @@ ind = np.random.randint(0, len(x_val) - 1)
 random_music = x_val[ind]
 
 predictions = []
-for i in range(50):
-    random_music = random_music.reshape(1, num_timesteps)
+for i in range(prediction_len):
+    random_music = random_music.reshape(1, 64)
 
     prob = model.predict(random_music)[0]
     y_pred = np.argmax(prob, axis=0)
@@ -467,5 +469,5 @@ print(predictions)
 x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
 predicted_notes = [x_int_to_note[i] for i in predictions]
 
-convert_to_midi(predicted_notes)
+convert_to_midi(predicted_notes, output)
 # FluidSynth.midi_to_audio('predicted.mid', 'output.wav')  # hopefully this generates a wav file.
