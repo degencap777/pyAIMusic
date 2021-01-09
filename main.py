@@ -1,6 +1,7 @@
 import music21 as m21
 import numpy as np
 # import cupy as cp #TODO: install cupy?
+import midi
 import os
 from collections import Counter
 import matplotlib.pyplot as plot
@@ -10,8 +11,15 @@ import keras.models as kmodels
 import keras.callbacks as kcallbacks
 import keras.backend as kbackend
 import random
-from midi2audio import FluidSynth
+
 import tensorflow as tf
+
+'''
+TODO:
+1 - use cupy
+2 - split into multiple pytho
+'''
+
 
 
 def check_inputs():
@@ -210,17 +218,20 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.Conv1D(128, 3, activation='relu', dilation_rate=2, padding='causal'))
-    model.add(klayers.Dropout(0.2))
+    model.add(klayers.Dropout(0.5))
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
-    model.add(klayers.Dropout(0.2))
+    model.add(klayers.Dropout(0.25))
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.GlobalMaxPool1D())
 
+
     model.add(klayers.Dense(256, activation='relu'))
+    model.add(klayers.Dropout(0.5))
     model.add(klayers.Dense(len(unique_y), activation='softmax'))
+    model.add(klayers.Dropout(0.5))
 
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
@@ -232,7 +243,7 @@ def fit_model(x_tr, x_val, y_tr, y_val):
 
     # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
     model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=5,
-                        validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+              validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
     # model = kmodels.load_model('best_model.h5')
 
 
@@ -273,19 +284,8 @@ def convert_to_midi(prediction_output, output_path):
         # increase offset each iteration so that notes do not stack
         offset += 1
     midi_stream = m21.stream.Stream(output_notes)
-    output_path = output_path+'.mid'
+    output_path = output_path + '.mid'
     midi_stream.write('midi', fp=output_path)
-
-
-def cov_midi_to_wav(name):
-    """
-    converts midi file to wav.
-    :param name: name of midi file without extension.
-    :return: null
-    """
-    midi_name = name + '.mid'
-    output_name = name + '.wav'
-    FluidSynth.midi_to_audio(midi_name, output_name)
 
 
 # Press the green button in the gutter to run the script.
@@ -298,8 +298,8 @@ if __name__ == '__main__':
 
     ingest = False  # do you want to ingest?
     re_fit = False  # do you want to re-fit the model?
-    output = 'predicted_sch_15'  # what would you like your output name to be?
-    prediction_len = 50 #how many steps of prediction do you want
+    output = 'predicted_sch_16'  # what would you like your output name to be?
+    prediction_len = 50  # how many steps of prediction do you want
 
     # ingest, path, re_fit, weights_name, output_name = check_inputs()
     # ingest = true if want ingest, false if no need to ingest
@@ -397,6 +397,7 @@ if __name__ == '__main__':
     # y_seq = np.array([y_note_to_int[i] for i in y])
     # print("prepped")
 
+    # this block is still needed for predictions later :(
     x_seq = np.load("x_seq.npy")
     y_seq = np.load("y_seq.npy")
     unique_x = np.load("x_unique.npy")
@@ -449,25 +450,31 @@ if __name__ == '__main__':
         fit_model(x_tr, x_val, y_tr, y_val)
     model = kmodels.load_model('best_model.h5')
 
-# now we compose our own music......
-ind = np.random.randint(0, len(x_val) - 1)
+    # now we compose our own music......
+    ind = np.random.randint(0, len(x_val) - 1)
+    ind = random.randint(0, len(x_val)-1)
 
-random_music = x_val[ind]
+    # ind2 = np.random.randint(0, len(x_val)-1)
 
-predictions = []
-for i in range(prediction_len):
-    random_music = random_music.reshape(1, 64)
+    random_music = x_val[ind]
 
-    prob = model.predict(random_music)[0]
-    y_pred = np.argmax(prob, axis=0)
-    predictions.append(y_pred)
+    # random_music2 = x_val[ind2]
 
-    random_music = np.insert(random_music[0], len(random_music[0]), y_pred)
-    random_music = random_music[1:]
-print(predictions)
+    predictions = []
+    for i in range(prediction_len):
+        random_music = random_music.reshape(1, num_timesteps)
 
-x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
-predicted_notes = [x_int_to_note[i] for i in predictions]
+        prob = model.predict(random_music)[0]
+        y_pred = np.argmax(prob, axis=0)
+        predictions.append(y_pred)
 
-convert_to_midi(predicted_notes, output)
+        random_music = np.insert(random_music[0], len(random_music[0]), y_pred)
+        random_music = random_music[1:]
+    print(predictions)
+
+    x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
+    predicted_notes = [x_int_to_note[i] for i in predictions]
+
+    #everything should be in a main function.
+    convert_to_midi(predicted_notes, output)
 # FluidSynth.midi_to_audio('predicted.mid', 'output.wav')  # hopefully this generates a wav file.
