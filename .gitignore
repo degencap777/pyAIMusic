@@ -171,3 +171,9 @@ y_seq.npy
 y_unique.npy
 
 dataset/
+
+tunaset/
+
+tunaset2/
+
+*.mid

@@ -1,7 +1,6 @@
 import music21 as m21
 import numpy as np
 # import cupy as cp #TODO: install cupy?
-import midi
 import os
 from collections import Counter
 import matplotlib.pyplot as plot
@@ -126,7 +125,7 @@ def ingest_to_csv(path, num_timesteps, graph):
     :return: null
     """
     # integer threshold for frequent notes. Can be changed / edited by looking at graph.
-    thresh = 50
+    thresh = 75
 
     files = [i for i in os.listdir(path) if i.endswith(".mid")]
     notes_array = np.array([read_midi(path + i) for i in files], dtype=object)
@@ -142,6 +141,8 @@ def ingest_to_csv(path, num_timesteps, graph):
         plot.hist(num)
         plot.show()
 
+    print("applying frequent notes")
+
     frequent_notes = [note_ for note_, count in freq.items() if count >= thresh]
 
     # knowing top freq notes, prepare musical files
@@ -153,6 +154,8 @@ def ingest_to_csv(path, num_timesteps, graph):
                 temp.append(note_)
             new_music.append(temp)
     new_music = np.array(new_music, dtype=object)
+
+    print("done calculating frequent notes onto prepping data")
 
     # now onto prepping data.
     x = []
@@ -198,7 +201,7 @@ def ingest_to_csv(path, num_timesteps, graph):
     np.save("x_unique", unique_x)
     np.save("y_seq", y_seq)
     np.save("y_unique", unique_y)
-
+    print("saved")
 
 def fit_model(x_tr, x_val, y_tr, y_val):
     # xx% for training and 100-xx% for evaluation.
@@ -292,14 +295,15 @@ def convert_to_midi(prediction_output, output_path):
 if __name__ == '__main__':
 
     # # read_midi('F:\\Winter2021\\PythonMusicAI\\dataset\\schu_143_1.mid')
-    path = 'F:\\Winter2021\\PythonMusicGenerator\\dataset\\'
+    path = 'F:\\Winter2021\\PythonMusicGenerator\\tunaset2\\'
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = False  # do you want to ingest?
-    re_fit = False  # do you want to re-fit the model?
-    output = 'predicted_sch_16'  # what would you like your output name to be?
-    prediction_len = 50  # how many steps of prediction do you want
+    ingest = True  # do you want to ingest?
+    re_fit = True  # do you want to re-fit the model?
+    graph_frequency = False # graph frequency of notes?
+    output = 'predicted_tuna_1'  # what would you like your output name to be?
+    prediction_len = 100  # how many steps of prediction do you want
 
     # ingest, path, re_fit, weights_name, output_name = check_inputs()
     # ingest = true if want ingest, false if no need to ingest
@@ -309,7 +313,7 @@ if __name__ == '__main__':
     # output_name = output of predictions.
 
     if ingest:
-        ingest_to_csv(path, num_timesteps, False)
+        ingest_to_csv(path=path, num_timesteps=num_timesteps, graph=graph_frequency)
         print("ingested")
 
     # print("memes1")
