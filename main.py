@@ -11,7 +11,7 @@ import keras.callbacks as kcallbacks
 import keras.backend as kbackend
 import random
 from progress.bar import Bar
-
+import progress
 
 import tensorflow as tf
 
@@ -20,7 +20,6 @@ TODO:
 1 - use cupy
 2 - split into multiple pytho
 '''
-
 
 
 def check_inputs():
@@ -163,10 +162,10 @@ def ingest_to_csv(path, num_timesteps, graph):
     x = []
     y = []
 
-    bar_note_ = Bar("note_ in new_music", max=len(new_music), suffix='%(percent)d%%')
-
+    bar_note_ = Bar("note_ in new_music", max=len(new_music))
+    print("bardone?")
     for note_ in new_music:
-        bar_range = Bar("inner i", max=len(note_), suffix='%(percent)d%%')
+        bar_range = Bar("inner i", max=len(note_), color='cyan')
         for i in range(0, len(note_) - num_timesteps, 1):
             # print("note_ i:")
             # print("note_ i: ", i)
@@ -176,8 +175,8 @@ def ingest_to_csv(path, num_timesteps, graph):
 
             x.append(input_)
             y.append(output)
-            bar_range.next()
-        bar_range.finish()
+            # bar_range.next()
+        # bar_range.finish()
         bar_note_.next()
     bar_note_.finish()
     print("arrays appended")
@@ -212,6 +211,7 @@ def ingest_to_csv(path, num_timesteps, graph):
     np.save("y_unique", unique_y)
     print("saved")
 
+
 def fit_model(x_tr, x_val, y_tr, y_val):
     # xx% for training and 100-xx% for evaluation.
     '''currently using 20% for evaluation'''
@@ -238,7 +238,6 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.GlobalMaxPool1D())
-
 
     model.add(klayers.Dense(256, activation='relu'))
     model.add(klayers.Dropout(0.5))
@@ -310,7 +309,7 @@ if __name__ == '__main__':
 
     ingest = True  # do you want to ingest?
     re_fit = True  # do you want to re-fit the model?
-    graph_frequency = False # graph frequency of notes?
+    graph_frequency = False  # graph frequency of notes?
     output = 'predicted_tuna_1'  # what would you like your output name to be?
     prediction_len = 100  # how many steps of prediction do you want
 
@@ -465,7 +464,7 @@ if __name__ == '__main__':
 
     # now we compose our own music......
     ind = np.random.randint(0, len(x_val) - 1)
-    ind = random.randint(0, len(x_val)-1)
+    ind = random.randint(0, len(x_val) - 1)
 
     # ind2 = np.random.randint(0, len(x_val)-1)
 
@@ -488,6 +487,6 @@ if __name__ == '__main__':
     x_int_to_note = dict((number, note_) for number, note_ in enumerate(unique_x))
     predicted_notes = [x_int_to_note[i] for i in predictions]
 
-    #everything should be in a main function.
+    # everything should be in a main function.
     convert_to_midi(predicted_notes, output)
 # FluidSynth.midi_to_audio('predicted.mid', 'output.wav')  # hopefully this generates a wav file.
