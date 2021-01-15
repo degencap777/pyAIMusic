@@ -10,6 +10,8 @@ import keras.models as kmodels
 import keras.callbacks as kcallbacks
 import keras.backend as kbackend
 import random
+from progress.bar import Bar
+
 
 import tensorflow as tf
 
@@ -131,7 +133,7 @@ def ingest_to_csv(path, num_timesteps, graph):
     notes_array = np.array([read_midi(path + i) for i in files], dtype=object)
     notes_ = [element for note_ in notes_array for element in note_]
 
-    unique_notes = list(set(notes_))  # list of unique notes
+    # unique_notes = list(set(notes_))  # list of unique notes
 
     freq = dict(Counter(notes_))
     num = [count for _, count in freq.items()]
@@ -161,7 +163,10 @@ def ingest_to_csv(path, num_timesteps, graph):
     x = []
     y = []
 
+    bar_note_ = Bar("note_ in new_music", max=len(new_music), suffix='%(percent)d%%')
+
     for note_ in new_music:
+        bar_range = Bar("inner i", max=len(note_), suffix='%(percent)d%%')
         for i in range(0, len(note_) - num_timesteps, 1):
             # print("note_ i:")
             # print("note_ i: ", i)
@@ -171,6 +176,10 @@ def ingest_to_csv(path, num_timesteps, graph):
 
             x.append(input_)
             y.append(output)
+            bar_range.next()
+        bar_range.finish()
+        bar_note_.next()
+    bar_note_.finish()
     print("arrays appended")
     x = np.array(x)
     y = np.array(y)  # bc np arrays >>>>>
@@ -245,7 +254,7 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
 
     # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
-    model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=5,
+    model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=10,
               validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
     # model = kmodels.load_model('best_model.h5')
 
@@ -295,7 +304,7 @@ def convert_to_midi(prediction_output, output_path):
 if __name__ == '__main__':
 
     # # read_midi('F:\\Winter2021\\PythonMusicAI\\dataset\\schu_143_1.mid')
-    path = 'F:\\Winter2021\\PythonMusicGenerator\\tunaset2\\'
+    path = 'F:\\Winter2021\\PythonMusicGenerator\\tunaset\\'
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
