@@ -1,3 +1,5 @@
+import time
+
 import music21 as m21
 import numpy as np
 # import cupy as cp #TODO: install cupy?
@@ -10,10 +12,14 @@ import keras.models as kmodels
 import keras.callbacks as kcallbacks
 import keras.backend as kbackend
 import random
-from progress.bar import Bar
-import progress
+from progress.bar import ShadyBar, Bar, PixelBar, ChargingBar
+from progress.spinner import Spinner
+from multiprocessing import Process
+
 
 import tensorflow as tf
+
+from utils import longseq_ingest
 
 '''
 TODO:
@@ -84,132 +90,6 @@ def check_inputs():
         else:
             print("you have entered an invalid character.")
     return ingest, data_path, re_fit, weights_name, output_name
-
-
-def read_midi(file):
-    print("Loading Music File:", file)
-
-    notes = []
-    notes_to_parse = None
-
-    # parse midi file
-    midi = m21.converter.parse(file)
-
-    # grouping based on diff instruments
-    s2 = m21.instrument.partitionByInstrument(midi)
-
-    # Looping over instr
-    for part in s2.parts:
-        if 'Piano' in str(part):
-            notes_to_parse = part.recurse()
-
-            # note or chord
-            for element in notes_to_parse:
-                # note
-                if isinstance(element, m21.note.Note):
-                    notes.append(str(element.pitch))
-
-                # chord
-                elif isinstance(element, m21.chord.Chord):
-                    notes.append('.'.join(str(n) for n in element.normalOrder))
-
-    return np.array(notes)
-
-
-def ingest_to_csv(path, num_timesteps, graph):
-    """
-    knowing that you only want specific numpy arrays, this ingest function loads all midi files
-    and saves specifically the ones that need to be used. This means that we can call ingest only
-    when we have new data to handle
-    :str path: full file path
-    :bool graph: whether or not you want to see data
-    :return: null
-    """
-    # integer threshold for frequent notes. Can be changed / edited by looking at graph.
-    thresh = 75
-
-    files = [i for i in os.listdir(path) if i.endswith(".mid")]
-    notes_array = np.array([read_midi(path + i) for i in files], dtype=object)
-    notes_ = [element for note_ in notes_array for element in note_]
-
-    # unique_notes = list(set(notes_))  # list of unique notes
-
-    freq = dict(Counter(notes_))
-    num = [count for _, count in freq.items()]
-
-    if graph:  # only do this if you want to graph
-        plot.figure(figsize=(5, 5))
-        plot.hist(num)
-        plot.show()
-
-    print("applying frequent notes")
-
-    frequent_notes = [note_ for note_, count in freq.items() if count >= thresh]
-
-    # knowing top freq notes, prepare musical files
-    new_music = []
-    for notes in notes_array:
-        temp = []
-        for note_ in notes:
-            if note_ in frequent_notes:
-                temp.append(note_)
-            new_music.append(temp)
-    new_music = np.array(new_music, dtype=object)
-
-    print("done calculating frequent notes onto prepping data")
-
-    # now onto prepping data.
-    x = []
-    y = []
-
-    bar_note_ = Bar("note_ in new_music", max=len(new_music))
-    print("bardone?")
-    for note_ in new_music:
-        bar_range = Bar("inner i", max=len(note_), color='cyan')
-        for i in range(0, len(note_) - num_timesteps, 1):
-            # print("note_ i:")
-            # print("note_ i: ", i)
-            # prep input/outpu seqs
-            input_ = note_[i:i + num_timesteps]
-            output = note_[i + num_timesteps]
-
-            x.append(input_)
-            y.append(output)
-            # bar_range.next()
-        # bar_range.finish()
-        bar_note_.next()
-    bar_note_.finish()
-    print("arrays appended")
-    x = np.array(x)
-    y = np.array(y)  # bc np arrays >>>>>
-
-    print("x/y arrays made")
-    # asign intger to every note
-    unique_x = list(set(x.ravel()))
-    x_note_to_int = dict((note_, number) for number, note_ in enumerate(unique_x))
-
-    # prepare integer sequences for input data
-    x_seq = []
-    for i in x:
-        temp = []
-        for j in i:
-            # assign int to note
-            temp.append(x_note_to_int[j])
-        x_seq.append(temp)
-    x_seq = np.array(x_seq)
-
-    # prepareinteger sequences for output data
-    unique_y = list(set(y))
-    y_note_to_int = dict((note_, number) for number, note_ in enumerate(unique_y))
-    y_seq = np.array([y_note_to_int[i] for i in y])
-    print("prepped")
-
-    # we want to save y_seq and x_seq for later.
-    np.save("x_seq", x_seq)
-    np.save("x_unique", unique_x)
-    np.save("y_seq", y_seq)
-    np.save("y_unique", unique_y)
-    print("saved")
 
 
 def fit_model(x_tr, x_val, y_tr, y_val):
@@ -298,12 +178,19 @@ def convert_to_midi(prediction_output, output_path):
     output_path = output_path + '.mid'
     midi_stream.write('midi', fp=output_path)
 
+def start_spinner():
+    print("start spinner \n \n")
+    spinner = Spinner("loading")
+    while spinner_bool:
+        # time.sleep(1)
+        spinner.next()
 
 # Press the green button in the gutter to run the script.
+spinner_bool = False
 if __name__ == '__main__':
 
     # # read_midi('F:\\Winter2021\\PythonMusicAI\\dataset\\schu_143_1.mid')
-    path = 'F:\\Winter2021\\PythonMusicGenerator\\tunaset\\'
+    path = 'F:\\Winter2021\\PythonMusicGenerator\\tunaset2\\'
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
@@ -321,8 +208,23 @@ if __name__ == '__main__':
     # output_name = output of predictions.
 
     if ingest:
-        ingest_to_csv(path=path, num_timesteps=num_timesteps, graph=graph_frequency)
+        longseq_ingest(path=path, num_timesteps=num_timesteps,thresh=50, graph=graph_frequency)
+        # ingest = Process(target=ingest_to_csv, args=(path, num_timesteps, graph_frequency))
+        # spinner = Process(target=start_spinner, args=())
+        #
+        # ingest.start()
+        #
+        # ingest.join()
+        # spinner.join()
+        # #
+        # # spinner.start()
+        # # spinner.join()
         print("ingested")
+
+        # while(~spinner_bool):
+        #     ingest.terminate()
+        #     spinner.terminate()
+        #     break
 
     # print("memes1")
     # files = [i for i in os.listdir(path) if i.endswith(".mid")]
