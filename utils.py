@@ -175,7 +175,7 @@ def ingest_one(path, num_timesteps=32, thresh=50):
     del notes_array
     del notes_
 
-    print("Done calculating frequent notes. \n Prepping data.")
+    # print("Done calculating frequent notes. \n Prepping data.")
 
     # now onto prepping data.
     x = []
@@ -194,12 +194,12 @@ def ingest_one(path, num_timesteps=32, thresh=50):
         # bar_range.finish()
         bar_note_.next()
     bar_note_.finish()
-    print("arrays appended")
+    # print("arrays appended")
     del new_music
     x = np.array(x)
     y = np.array(y)  # bc np arrays >>>>>
 
-    print("x/y arrays made")
+    # print("x/y arrays made")
     # asign intger to every note
     unique_x = list(set(x.ravel()))
     x_note_to_int = dict((note_, number) for number, note_ in enumerate(unique_x))
@@ -221,11 +221,11 @@ def ingest_one(path, num_timesteps=32, thresh=50):
     unique_y = list(set(y))
     y_note_to_int = dict((note_, number) for number, note_ in enumerate(unique_y))
     y_seq = np.array([y_note_to_int[i] for i in y])
-    print("prepped")
+    # print("prepped")
     return x_seq, unique_x, y_seq, unique_y
 
 
-def batch_ingest(dir, num_timesteps=32, thresh=50, graph=True):
+def batch_ingest(dir, num_timesteps=32, thresh=50, graph=False):
     """
     cycles through and batch ingests a lot of things
     :param dir:
@@ -234,13 +234,13 @@ def batch_ingest(dir, num_timesteps=32, thresh=50, graph=True):
     :param graph:
     :return:
     """
-    x_seq = np.array()
-    unique_x = np.array()
-    y_seq = np.array()
-    unique_y = np.array()
+    x_seq = np.array([])
+    unique_x = np.array([])
+    y_seq = np.array([])
+    unique_y = np.array([])
     files = [i for i in os.listdir(dir) if i.endswith(".mid")]
     for path in files:
-        x_seq_temp, unique_x_temp, y_seq_temp, unique_y_temp = ingest_one(path=path, num_timesteps=num_timesteps,
+        x_seq_temp, unique_x_temp, y_seq_temp, unique_y_temp = ingest_one(path=(dir+path), num_timesteps=num_timesteps,
                                                                           thresh=thresh)
         np.append(x_seq, x_seq_temp)
         np.append(unique_x, unique_x_temp)

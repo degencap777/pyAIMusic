@@ -18,7 +18,7 @@ from multiprocessing import Process
 
 
 
-from utils import longseq_ingest
+from utils import longseq_ingest, batch_ingest
 
 '''
 TODO:
@@ -207,6 +207,7 @@ if __name__ == '__main__':
     # output_name = output of predictions.
 
     if ingest:
+        # batch_ingest(dir=path)
         longseq_ingest(path=path, num_timesteps=num_timesteps,thresh=50, graph=graph_frequency)
         # ingest = Process(target=ingest_to_csv, args=(path, num_timesteps, graph_frequency))
         # spinner = Process(target=start_spinner, args=())
