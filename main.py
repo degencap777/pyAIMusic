@@ -1,5 +1,5 @@
 import time
-
+import tensorflow as tf
 import music21 as m21
 import numpy as np
 # import cupy as cp #TODO: install cupy?
@@ -17,7 +17,6 @@ from progress.spinner import Spinner
 from multiprocessing import Process
 
 
-import tensorflow as tf
 
 from utils import longseq_ingest
 
@@ -34,7 +33,7 @@ def check_inputs():
     :return: ingest, data_path, re_fit, weights_name, output_name
     """
     ingest = True  # keep this true by default just in case.
-    data_path = "F:\\Winter2021\\PythonMusicGenerator\\dataset\\"
+    data_path = "music\\"
     re_fit = True  # keep this true by default. Determines whether or not to re-train model.
     weights_name = "best_model.h5"
     output_name = "prediction"
@@ -190,11 +189,11 @@ spinner_bool = False
 if __name__ == '__main__':
 
     # # read_midi('F:\\Winter2021\\PythonMusicAI\\dataset\\schu_143_1.mid')
-    path = 'F:\\Winter2021\\PythonMusicGenerator\\tunaset2\\'
+    path = 'music\\' #local referenced path :!
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = False  # do you want to ingest?
+    ingest = True  # do you want to ingest?
     re_fit = True  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
     output = 'predicted_tuna_1'  # what would you like your output name to be?
