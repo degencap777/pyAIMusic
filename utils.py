@@ -83,7 +83,7 @@ def longseq_ingest(path, num_timesteps=32, thresh=50, graph=True):
             new_music.append(temp)
     new_music = np.array(new_music, dtype=object)
 
-    del frequent_notes # memory optimizations
+    del frequent_notes  # memory optimizations
     del notes_array
     del notes_
 
@@ -138,6 +138,115 @@ def longseq_ingest(path, num_timesteps=32, thresh=50, graph=True):
     del y
 
     # we want to save y_seq and x_seq for later.
+    np.save("x_seq", x_seq)
+    np.save("x_unique", unique_x)
+    np.save("y_seq", y_seq)
+    np.save("y_unique", unique_y)
+    print("saved")
+    return;
+
+
+def ingest_one(path, num_timesteps=32, thresh=50):
+    """
+    ingests 1 file and returns x_seq, unique_x, y_seq, unique_y
+    :param path: path to an actual file
+    :param num_timesteps:
+    :param thresh:
+    :return: non-numpy x_seq, unique_x, y_seq, unique_y
+    """
+    # print("reading from: " + path)
+    notes_array = np.array([read_midi(path)], dtype=object)
+    notes_ = [element for note_ in notes_array for element in note_]
+    freq=dict(Counter(notes_))
+
+    frequent_notes = [note_ for note_, count in freq.items() if count >= thresh]
+
+    # knowing top freq notes, prepare musical files
+    new_music = []
+    for notes in notes_array:
+        temp = []
+        for note_ in notes:
+            if note_ in frequent_notes:
+                temp.append(note_)
+            new_music.append(temp)
+    new_music = np.array(new_music, dtype=object)
+
+    del frequent_notes  # memory optimizations
+    del notes_array
+    del notes_
+
+    print("Done calculating frequent notes. \n Prepping data.")
+
+    # now onto prepping data.
+    x = []
+    y = []
+    bar_note_ = ChargingBar("Collapsing note arrays", max=len(new_music))
+    spinner_bool = True
+    for note_ in new_music:
+        # bar_range = Bar("inner i", max=len(note_), color='cyan')
+        for i in range(0, len(note_) - num_timesteps, 1):
+            input_ = note_[i:i + num_timesteps]
+            output = note_[i + num_timesteps]
+
+            x.append(input_)
+            y.append(output)
+            # bar_range.next()
+        # bar_range.finish()
+        bar_note_.next()
+    bar_note_.finish()
+    print("arrays appended")
+    del new_music
+    x = np.array(x)
+    y = np.array(y)  # bc np arrays >>>>>
+
+    print("x/y arrays made")
+    # asign intger to every note
+    unique_x = list(set(x.ravel()))
+    x_note_to_int = dict((note_, number) for number, note_ in enumerate(unique_x))
+
+    # prepare integer sequences for input data
+    bar = ChargingBar("appending sequence arrays", max=len(x))
+    x_seq = []
+    for i in x:
+        temp = []
+        for j in i:
+            # assign int to note
+            temp.append(x_note_to_int[j])
+        x_seq.append(temp)
+        bar.next()
+    bar.finish()
+    x_seq = np.array(x_seq)
+
+    # prepareinteger sequences for output data
+    unique_y = list(set(y))
+    y_note_to_int = dict((note_, number) for number, note_ in enumerate(unique_y))
+    y_seq = np.array([y_note_to_int[i] for i in y])
+    print("prepped")
+    return x_seq, unique_x, y_seq, unique_y
+
+
+def batch_ingest(dir, num_timesteps=32, thresh=50, graph=True):
+    """
+    cycles through and batch ingests a lot of things
+    :param dir:
+    :param num_timesteps:
+    :param thresh:
+    :param graph:
+    :return:
+    """
+    x_seq = np.array()
+    unique_x = np.array()
+    y_seq = np.array()
+    unique_y = np.array()
+    files = [i for i in os.listdir(dir) if i.endswith(".mid")]
+    for path in files:
+        x_seq_temp, unique_x_temp, y_seq_temp, unique_y_temp = ingest_one(path=path, num_timesteps=num_timesteps,
+                                                                          thresh=thresh)
+        np.append(x_seq, x_seq_temp)
+        np.append(unique_x, unique_x_temp)
+        np.append(y_seq, y_seq_temp)
+        np.append(unique_y, unique_y_temp)
+
     np.save("x_seq", x_seq)
     np.save("x_unique", unique_x)
     np.save("y_seq", y_seq)

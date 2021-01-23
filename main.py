@@ -96,8 +96,8 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     # xx% for training and 100-xx% for evaluation.
     '''currently using 20% for evaluation'''
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
-    x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
-
+    # x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
+    print("building model")
     # start building the model now. Clean this up later.
     kbackend.clear_session()
     model = kmodels.Sequential();
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = True  # do you want to ingest?
+    ingest = False  # do you want to ingest?
     re_fit = True  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
     output = 'predicted_tuna_1'  # what would you like your output name to be?
@@ -312,6 +312,7 @@ if __name__ == '__main__':
     # print("prepped")
 
     # this block is still needed for predictions later :(
+    print("loading arrays")
     x_seq = np.load("x_seq.npy")
     y_seq = np.load("y_seq.npy")
     unique_x = np.load("x_unique.npy")
@@ -322,43 +323,7 @@ if __name__ == '__main__':
     '''currently using 20% for evaluation'''
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
     x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
-
-    # # start building the model now. Clean this up later.
-    # kbackend.clear_session()
-    # model = kmodels.Sequential();
-    #
-    # # embedding layers
-    # model.add(klayers.Embedding(len(unique_x), 100, input_length=32, trainable=True))
-    #
-    # model.add(klayers.Conv1D(64, 3, padding='causal', activation='relu'))
-    # model.add(klayers.Dropout(0.2))
-    # model.add(klayers.MaxPool1D(2))
-    #
-    # model.add(klayers.Conv1D(128, 3, activation='relu', dilation_rate=2, padding='causal'))
-    # model.add(klayers.Dropout(0.2))
-    # model.add(klayers.MaxPool1D(2))
-    #
-    # model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
-    # model.add(klayers.Dropout(0.2))
-    # model.add(klayers.MaxPool1D(2))
-    #
-    # model.add(klayers.GlobalMaxPool1D())
-    #
-    # model.add(klayers.Dense(256, activation='relu'))
-    # model.add(klayers.Dense(len(unique_y), activation='softmax'))
-    #
-    # model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
-    #
-    # model.summary()
-    #
-    # # callback to save best model during training
-    # # TODO: remember to change the names
-    # mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
-    #
-    # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true' #this is not a proper fix.
-    # if re_fit:
-    #     history = model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=2,
-    #                         validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+    print("done train test split")
 
     if re_fit:
         fit_model(x_tr, x_val, y_tr, y_val)
