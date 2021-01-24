@@ -109,19 +109,18 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.Conv1D(128, 3, activation='relu', dilation_rate=2, padding='causal'))
-    model.add(klayers.Dropout(0.5))
+    model.add(klayers.Dropout(0.2))
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
-    model.add(klayers.Dropout(0.5))
+    model.add(klayers.Dropout(0.2))
     model.add(klayers.MaxPool1D(2))
 
+    # model.add(Conv1D(256,5,activation='relu'))
     model.add(klayers.GlobalMaxPool1D())
 
     model.add(klayers.Dense(256, activation='relu'))
-    # model.add(klayers.Dropout(0.5))
     model.add(klayers.Dense(len(unique_y), activation='softmax'))
-    model.add(klayers.Dropout(0.5))
 
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
@@ -330,7 +329,6 @@ if __name__ == '__main__':
     model = kmodels.load_model('best_model.h5')
 
     # now we compose our own music......
-    ind = np.random.randint(0, len(x_val) - 1)
     ind = random.randint(0, len(x_val) - 1)
 
     # ind2 = np.random.randint(0, len(x_val)-1)
