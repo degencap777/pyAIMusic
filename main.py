@@ -113,13 +113,13 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.Conv1D(256, 3, activation='relu', dilation_rate=4, padding='causal'))
-    model.add(klayers.Dropout(0.25))
+    model.add(klayers.Dropout(0.5))
     model.add(klayers.MaxPool1D(2))
 
     model.add(klayers.GlobalMaxPool1D())
 
     model.add(klayers.Dense(256, activation='relu'))
-    model.add(klayers.Dropout(0.5))
+    # model.add(klayers.Dropout(0.5))
     model.add(klayers.Dense(len(unique_y), activation='softmax'))
     model.add(klayers.Dropout(0.5))
 
@@ -132,7 +132,7 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     mc = kcallbacks.ModelCheckpoint('best_model.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
 
     # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
-    model.fit(np.array(x_tr), np.array(y_tr), batch_size=128, epochs=10,
+    model.fit(np.array(x_tr), np.array(y_tr), batch_size=64, epochs=20,
               validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
     # model = kmodels.load_model('best_model.h5')
 
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = True  # do you want to ingest?
+    ingest = False  # do you want to ingest?
     re_fit = True  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
     output = 'predicted_tuna_1'  # what would you like your output name to be?
