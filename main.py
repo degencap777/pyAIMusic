@@ -16,8 +16,7 @@ from progress.bar import ShadyBar, Bar, PixelBar, ChargingBar
 from progress.spinner import Spinner
 from multiprocessing import Process
 
-
-
+from models import lstm
 from utils import longseq_ingest, batch_ingest
 
 '''
@@ -95,6 +94,7 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     # xx% for training and 100-xx% for evaluation.
     '''currently using 20% for evaluation'''
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
+    # TF_XLA_FLAGS = --tf_xla_auto_jit = 1 #enable xla
     # x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
     print("building model")
     # start building the model now. Clean this up later.
@@ -134,6 +134,24 @@ def fit_model(x_tr, x_val, y_tr, y_val):
     model.fit(np.array(x_tr), np.array(y_tr), batch_size=64, epochs=20,
               validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
     # model = kmodels.load_model('best_model.h5')
+
+def fit_lstm(splitter):
+    x_tr, x_val, y_tr, y_val = splitter
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
+    # TF_XLA_FLAGS = --tf_xla_auto_jit = 1  # enable xla
+    kbackend.clear_session()
+    model = lstm()
+    model.summary()
+    mc = kcallbacks.ModelCheckpoint('best_lstm.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
+    model.fit(np.array(x_tr), np.array(y_tr), batch_size=64, epochs=20,
+              validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+
+def fit_model(type, splitter):
+    if type == "lstm":
+        fit_lstm(splitter)
+    elif type == "wavenet":
+        x_tr, x_val, y_tr, y_val = splitter
+        fit_model(x_tr, x_val, y_tr, y_val)
 
 
 def convert_to_midi(prediction_output, output_path):
@@ -322,11 +340,17 @@ if __name__ == '__main__':
     '''currently using 20% for evaluation'''
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
     x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
+    splitter = x_tr, x_val, y_tr, y_val
     print("done train test split")
 
+    '''
+    ok so:
+    lstm model callback: best_lstm.h5
+    wavenet model callback: best_model.h5
+    '''
     if re_fit:
-        fit_model(x_tr, x_val, y_tr, y_val)
-    model = kmodels.load_model('best_model.h5')
+        fit_model("lstm", splitter)
+    model = kmodels.load_model('best_lstm.h5')
 
     # now we compose our own music......
     ind = random.randint(0, len(x_val) - 1)
