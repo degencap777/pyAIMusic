@@ -90,7 +90,7 @@ def check_inputs():
     return ingest, data_path, re_fit, weights_name, output_name
 
 
-def fit_model(x_tr, x_val, y_tr, y_val):
+def fit_wavenet(x_tr, x_val, y_tr, y_val):
     # xx% for training and 100-xx% for evaluation.
     '''currently using 20% for evaluation'''
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
@@ -141,17 +141,18 @@ def fit_lstm(splitter):
     # TF_XLA_FLAGS = --tf_xla_auto_jit = 1  # enable xla
     kbackend.clear_session()
     model = lstm()
-    model.summary()
+    # model.summary()
     mc = kcallbacks.ModelCheckpoint('best_lstm.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
     model.fit(np.array(x_tr), np.array(y_tr), batch_size=64, epochs=20,
               validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+    model.summary()
 
 def fit_model(type, splitter):
     if type == "lstm":
         fit_lstm(splitter)
     elif type == "wavenet":
         x_tr, x_val, y_tr, y_val = splitter
-        fit_model(x_tr, x_val, y_tr, y_val)
+        fit_wavenet(x_tr, x_val, y_tr, y_val)
 
 
 def convert_to_midi(prediction_output, output_path):
@@ -349,8 +350,8 @@ if __name__ == '__main__':
     wavenet model callback: best_model.h5
     '''
     if re_fit:
-        fit_model("lstm", splitter)
-    model = kmodels.load_model('best_lstm.h5')
+        fit_model("wavenet", splitter)
+    model = kmodels.load_model('best_model.h5')
 
     # now we compose our own music......
     ind = random.randint(0, len(x_val) - 1)
