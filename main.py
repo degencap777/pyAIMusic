@@ -212,10 +212,10 @@ if __name__ == '__main__':
     # # path = 'dataset/'
 
     ingest = False  # do you want to ingest?
-    re_fit = True  # do you want to re-fit the model?
+    re_fit = False  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
-    output = 'predicted_tuna_1'  # what would you like your output name to be?
-    prediction_len = 100  # how many steps of prediction do you want
+    output = 'predicted_tuna_l2'  # what would you like your output name to be?
+    prediction_len = 500  # how many steps of prediction do you want
 
     # ingest, path, re_fit, weights_name, output_name = check_inputs()
     # ingest = true if want ingest, false if no need to ingest
