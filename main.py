@@ -140,7 +140,14 @@ def fit_lstm(splitter):
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
     # TF_XLA_FLAGS = --tf_xla_auto_jit = 1  # enable xla
     kbackend.clear_session()
-    model = lstm()
+    model = klayers.Sequential()
+    model.add(klayers.LSTM(128, return_sequences=True))
+    model.add(klayers.LSTM(128))
+    model.add(klayers.Dense(256))
+    model.add(klayers.Activation('relu'))
+    model.add(klayers.Dense(128))
+    model.add(klayers.Activation('softmax'))
+    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
     # model.summary()
     mc = kcallbacks.ModelCheckpoint('best_lstm.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
     model.fit(np.array(x_tr), np.array(y_tr), batch_size=64, epochs=20,
@@ -212,8 +219,9 @@ if __name__ == '__main__':
     # # path = 'dataset/'
 
     ingest = False  # do you want to ingest?
-    re_fit = False  # do you want to re-fit the model?
+    re_fit = True  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
+    load_splitter = False;
     output = 'predicted_tuna_l2'  # what would you like your output name to be?
     prediction_len = 500  # how many steps of prediction do you want
 
@@ -337,10 +345,20 @@ if __name__ == '__main__':
     unique_y = np.load("y_unique.npy")
     print("loaded")
 
-    # xx% for training and 100-xx% for evaluation.
-    '''currently using 20% for evaluation'''
-    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
-    x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
+    if load_splitter:
+        x_tr = np.load("x_tr.npy")
+        x_val = np.load("x_val.npy")
+        y_tr = np.load("y_tr.npy")
+        y_val = np.load("y_val.npy")
+    else:
+        # xx% for training and 100-xx% for evaluation.
+        '''currently using 20% for evaluation'''
+        os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
+        x_tr, x_val, y_tr, y_val = train_test_split(x_seq, y_seq, test_size=0.2, random_state=0)
+        np.save("x_tr", x_tr)
+        np.save("x_val", x_val)
+        np.save("y_tr", y_val)
+        np.save("y_val", y_val)
     splitter = x_tr, x_val, y_tr, y_val
     print("done train test split")
 
@@ -350,8 +368,8 @@ if __name__ == '__main__':
     wavenet model callback: best_model.h5
     '''
     if re_fit:
-        fit_model("wavenet", splitter)
-    model = kmodels.load_model('best_model.h5')
+        fit_model("lstm", splitter)
+    model = kmodels.load_model('best_lstm.h5')
 
     # now we compose our own music......
     ind = random.randint(0, len(x_val) - 1)
