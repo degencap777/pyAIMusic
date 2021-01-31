@@ -140,7 +140,7 @@ def fit_lstm(splitter):
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # this is not a proper fix.
     # TF_XLA_FLAGS = --tf_xla_auto_jit = 1  # enable xla
     kbackend.clear_session()
-    model = klayers.Sequential()
+    model = kmodels.Sequential()
     model.add(klayers.LSTM(128, return_sequences=True))
     model.add(klayers.LSTM(128))
     model.add(klayers.Dense(256))
@@ -150,8 +150,8 @@ def fit_lstm(splitter):
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
     # model.summary()
     mc = kcallbacks.ModelCheckpoint('best_lstm.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
-    model.fit(np.array(x_tr), np.array(y_tr), batch_size=64, epochs=20,
-              validation_data=(np.array(x_val), np.array(y_val)), verbose=1, callbacks=[mc])
+    model.fit(np.array(x_tr), batch_size=64, epochs=20,
+              validation_data=(np.array(x_val)), verbose=1, callbacks=[mc])
     model.summary()
 
 def fit_model(type, splitter):
@@ -219,9 +219,9 @@ if __name__ == '__main__':
     # # path = 'dataset/'
 
     ingest = False  # do you want to ingest?
-    re_fit = False  # do you want to re-fit the model?
+    re_fit = True  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
-    load_splitter = False;
+    load_splitter = True;
     output = 'predicted_tuna_l2'  # what would you like your output name to be?
     prediction_len = 500  # how many steps of prediction do you want
 
