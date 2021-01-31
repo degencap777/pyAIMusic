@@ -218,8 +218,8 @@ if __name__ == '__main__':
     num_timesteps = 32  # you need to change input length if you change this too
     # # path = 'dataset/'
 
-    ingest = True  # do you want to ingest?
-    re_fit = True  # do you want to re-fit the model?
+    ingest = False  # do you want to ingest?
+    re_fit = False  # do you want to re-fit the model?
     graph_frequency = False  # graph frequency of notes?
     load_splitter = False;
     output = 'predicted_tuna_l2'  # what would you like your output name to be?
