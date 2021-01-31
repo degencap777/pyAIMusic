@@ -150,8 +150,8 @@ def fit_lstm(splitter):
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
     # model.summary()
     mc = kcallbacks.ModelCheckpoint('best_lstm.h5', monitor='val_loss', mode='min', save_best_only=True, verbose=1)
-    model.fit(np.array(x_tr), batch_size=64, epochs=20,
-              validation_data=(np.array(x_val)), verbose=1, callbacks=[mc])
+    model.fit((np.array(x_tr), np.array(y_tr)), batch_size=64, epochs=20,
+              validation_data=(np.array(x_val).any(), np.array(y_val).any()), verbose=1, callbacks=[mc])
     model.summary()
 
 def fit_model(type, splitter):
